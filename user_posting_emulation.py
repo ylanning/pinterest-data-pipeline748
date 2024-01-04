@@ -6,7 +6,6 @@ import boto3
 import json
 import sqlalchemy
 from sqlalchemy import text
-from pprint import pprint
 from datetime import datetime
 import ast
 
@@ -42,10 +41,7 @@ def datetime_serializer(obj):
         return obj.isoformat()
     raise TypeError("Type not serializeable")
     
-def send_data_to_kafka_topic(url,datas):
-    print("++++++"  * 25)
-    print('send data to kafka topics')
-    
+def send_data_to_kafka_topic(url,datas):    
     headers = {'Content-Type': 'application/vnd.kafka.json.v2+json'}    
     response = requests.request("POST", url, data=datas, headers=headers)
     
@@ -55,9 +51,7 @@ def send_data_to_kafka_topic(url,datas):
         print(f"Failed to send data to {url}. Status code: {response.status_code}, Response: {response.text}")
 
 def run_infinite_post_data_loop():
-    print('inside run infinite post data loop')
-    counter = 0
-    while counter < 25:
+    while True:
         try:
             sleep(random.randrange(0, 2))
             random_row = random.randint(0, 11000)
@@ -70,8 +64,7 @@ def run_infinite_post_data_loop():
                 
                 for row in pin_selected_row:
                     pin_result = dict(row._mapping)
-                    print(pin_result)
-
+          
                 payload = json.dumps({
                 "records": [
                     {
@@ -90,9 +83,6 @@ def run_infinite_post_data_loop():
                             "unique_id": pin_result["unique_id"]}
                     }]})
 
-                print('PAYLOAD')
-                print(payload)
-
                 # Send data to Kafka topics via API Gateway
                 send_data_to_kafka_topic(pin_invoke_url,payload)
 
@@ -102,10 +92,6 @@ def run_infinite_post_data_loop():
                 
                 for row in geo_selected_row:
                     geo_result = dict(row._mapping)
-
-                
-                # print(type(geo_result))
-                # print(geo_result)
 
                 payload = json.dumps({
                 "records": [
@@ -117,9 +103,6 @@ def run_infinite_post_data_loop():
                             "longitude": geo_result["longitude"],
                             "country": geo_result["country"]}
                     }]})
-
-                print('PAYLOAD')
-                print(payload)
                     
                 # Send data to Kafka topics via API Gateway
                 send_data_to_kafka_topic(geo_invoke_url,payload)
@@ -130,8 +113,6 @@ def run_infinite_post_data_loop():
                 
                 for row in user_selected_row:
                     user_result = dict(row._mapping)
-                    print(type(user_result))
-                    print(user_result)
                                     
                 payload = json.dumps({
                 "records": [
@@ -144,13 +125,8 @@ def run_infinite_post_data_loop():
                             "date_joined": user_result["date_joined"].isoformat()}
                     }]})
 
-                print('PAYLOAD')
-                print(payload)
-                   
                 # Send data to Kafka topics via API Gateway
                 send_data_to_kafka_topic(user_invoke_url,payload)
-                
-            counter += 1
                 
         except KeyboardInterrupt:
              # Handle a keyboard interrupt (the user presses Ctrl+C)
