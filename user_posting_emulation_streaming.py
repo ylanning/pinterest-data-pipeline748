@@ -7,14 +7,9 @@ import json
 import sqlalchemy
 from sqlalchemy import text
 from datetime import datetime
-import ast
-from pprint import pprint
-import base64
 import yaml
 
 random.seed(100)
-
-
 db_cred_file = './db_cred.yaml'
 
 class AWSDBConnector:
@@ -48,7 +43,6 @@ class AWSDBConnector:
 
 new_connector = AWSDBConnector()
 
-invoke_url = "https://uf6d6cgu5e.execute-api.us-east-1.amazonaws.com/kinesis/streams"
 invoke_url = "https://uf6d6cgu5e.execute-api.us-east-1.amazonaws.com/pinterest_datas/streams"
 pin_invoke_url = f"{invoke_url}/streaming-0a2f66c3e41f-pin/record"
 geo_invoke_url = f"{invoke_url}/streaming-0a2f66c3e41f-geo/record"
@@ -62,18 +56,13 @@ def send_data_to_kafka_topic(url,datas):
     if response.status_code == 200:
         print(response.status_code)
         data = response.json()
-        print('data')
         print(data)
         print(f"Data sent successfully to {url}")
-        print("++++++" * 30)
-        print("\n")
     else:
         print(f"Failed to send data to {url}. Status code: {response.status_code}, Response: {response.text}")
 
 def run_infinite_post_data_loop():
-    print('inside loop')
-    counter = 0
-    while counter < 50:
+    while True:
         try:
             sleep(random.randrange(0, 2))
             random_row = random.randint(0, 11000)
@@ -86,12 +75,7 @@ def run_infinite_post_data_loop():
                 
                 for row in pin_selected_row:
                     pin_result = dict(row._mapping)
-                print("++++++" * 30)
-                print("\n")
-                print('PIN')
-                pprint(pin_result)
-                print("\n")
-    
+           
                 payload_pin = json.dumps({
                 "StreamName": "streaming-0a2f66c3e41f-pin",
                 "Data": {
@@ -110,18 +94,13 @@ def run_infinite_post_data_loop():
                         },
                 "PartitionKey": "1"})
                 
-    
                 ######### GEO ##########
                 geo_string = text(f"SELECT * FROM geolocation_data LIMIT {random_row}, 1")
                 geo_selected_row = connection.execute(geo_string)
                 
                 for row in geo_selected_row:
                     geo_result = dict(row._mapping)
-                print("++++++" * 30)
-                print("\n")  
-                print('GEO')     
-                pprint(geo_result)  
-                print("\n")  
+         
                 payload_geo = json.dumps({
                 "StreamName": "streaming-0a2f66c3e41f-geo",
                 "Data":{
@@ -142,11 +121,7 @@ def run_infinite_post_data_loop():
                 
                 for row in user_selected_row:
                     user_result = dict(row._mapping)
-                print("++++++" * 30)
-                print("\n")  
-                print('GEO')     
-                pprint(user_result)  
-                print("\n")  
+    
                 payload_user = json.dumps({
                 "StreamName": "streaming-0a2f66c3e41f-user",
                 "Data":  {
@@ -161,14 +136,11 @@ def run_infinite_post_data_loop():
                 send_data_to_kafka_topic(pin_invoke_url,payload_pin)
                 send_data_to_kafka_topic(geo_invoke_url,payload_geo)
                 send_data_to_kafka_topic(user_invoke_url,payload_user)
-
-            counter += 1
                 
         except KeyboardInterrupt:
              # Handle a keyboard interrupt (the user presses Ctrl+C)
                 print("\nExiting the loop.")
                 break  # Exit the loop
-
                 
 if __name__ == "__main__":
     try:

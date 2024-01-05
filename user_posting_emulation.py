@@ -8,24 +8,41 @@ import sqlalchemy
 from sqlalchemy import text
 from datetime import datetime
 import ast
+import yaml
 
 random.seed(100)
-
+db_cred_file = './db_cred.yaml'
 
 class AWSDBConnector:
 
     def __init__(self):
 
-        self.HOST = "pinterestdbreadonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com"
-        self.USER = 'project_user'
-        self.PASSWORD = ':t%;yCY3Yjg'
-        self.DATABASE = 'pinterest_data'
-        self.PORT = 3306
+        def __init__(self):
+            self.cred = self.read_db_creds(db_cred_file)
+            self.HOST = self.cred['HOST']
+            self.USER = self.cred['USER']
+            self.PASSWORD = self.cred['PASSWORD']
+            self.DATABASE = self.cred['DATABASE']
+            self.PORT = self.cred['PORT']
+            self.pin_result = {}
+            self.geo_result = {}
+            self.user_result = {}
+        
+    def read_db_creds(self, db_cred_file):
+        try:
+            with open(db_cred_file, 'r') as file:
+                creds = yaml.safe_load(file)
+                return creds
+        except FileNotFoundError:
+            print(f"Error: File {db_cred_file} not found.")
+            # Handle the exception as needed
+        except yaml.YAMLError:
+            print(f"Error: Invalid YAML format in {db_cred_file}.")
+            # Handle the exception as needed
         
     def create_db_connector(self):
         engine = sqlalchemy.create_engine(f"mysql+pymysql://{self.USER}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DATABASE}?charset=utf8mb4")
         return engine
-
 
 new_connector = AWSDBConnector()
 
